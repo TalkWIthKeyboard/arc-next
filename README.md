@@ -10,19 +10,23 @@
   <img src="https://img.shields.io/badge/license-MIT-ff5a6e" alt="MIT License">
 </p>
 
-I have been using Arc since its invite-only beta in 2021. Browsers had been boring for years, and I still remember how striking Arc felt the first time I used it. As a business decision, I completely understand why The Browser Company moved on from Arc to build Dia. Personally, I find it hard to let go, especially of the sense of novelty it gave me. Last month I received the email saying Arc was being discontinued, so I started looking for a replacement. Zen Browser is excellent, but the Chrome extensions I depend on keep me on Chromium. Coming back to Chrome after a long time away, I found it had changed as well, so I decided to make full use of what Chrome already offers and bring a bit of Arc to it.
+I've been using Arc since its invite-only beta in 2021. Browsers had been boring for years, and I still remember how different Arc felt the first time I opened it.
 
-Over the years, every Arc release page was a delight, and I tried every new feature. In the end only a few became part of my daily routine. The first is the sidebar. Many Arc-inspired extensions build a sidebar of their own, but honestly the experience is not great and it tends to conflict with other extensions. So arc-next keeps things simple and uses Chrome's native vertical tabs.
+I get why The Browser Company moved on to Dia. It makes sense as a business. I still can't quite let go, mostly because nothing else has felt that new since.
 
-Favorites in the sidebar are what I use most. I open Twitter and Hacker News countless times a day. Chrome's pinned tabs cover part of this, with a few subtle differences: a pinned tab cannot be reset, and pressing ⌘W twice closes the pinned page for good. arc-next adds a small fix so that a Favorite can only be removed by unpinning it yourself.
+Last month the email came saying Arc was being discontinued, so I went looking for a replacement. Zen is great, but I can't live without my Chrome extensions, so Chromium it is. Chrome has changed a lot since I left, and that gave me the idea: use what Chrome already has, and bring a bit of Arc over.
 
-The Pinned area of a Space can be built on Chrome's tab groups, which have the same problems as pinned tabs. They get the same reset and close protection, plus a shortcut for quickly adding a page to the Space. The Today area gets automatic cleanup after 12 hours and a manual clear. A cleanup closes the inactive pages in Today and also resets Pinned and Favorites.
+I read every Arc release page and tried every new feature, but only a few stuck. The sidebar is one. A lot of Arc-inspired extensions draw their own, and it never feels right and tends to fight with other extensions. arc-next doesn't bother; it uses Chrome's native vertical tabs.
 
-Then there is ⌘T search. I am used to a quick launcher (and a die-hard Raycast user), so this one matters a lot to me. I tried Arc Search and other extensions and found that both their ranking and what they search had problems of one kind or another, which made them painful to use. So I ported the data sources and the ranking algorithm of Chrome's address bar and added some of Arc's design. It now feels like a passable launcher.
+Favorites are what I use most. I open Twitter and Hacker News all day long. Chrome's pinned tabs get most of the way there, with two gaps: you can't reset one, and pressing ⌘W twice closes it for good. arc-next fixes both, so a Favorite only goes away when you unpin it yourself.
 
-Last is Arc's seamless multi-profile switching. I looked into reproducing it with an extension. At first glance the existing approaches are all rather hacky, with no guarantee on effort or stability, and they need separate handling for the cookie behavior of many sites. So it is not supported for now. I will revisit it when Chrome offers more flexible APIs.
+A Space's Pinned area maps onto Chrome's tab groups, which have the same gaps as pinned tabs. So they get the same reset and close protection, plus a shortcut to add the current page to the Space. Everything else is Today, which cleans itself up after 12 hours, or right away if you ask. A cleanup closes the idle pages in Today and resets Pinned and Favorites.
 
-Going back to Chrome is not a bad thing. I get a better cross-platform experience again, and extensions support it first. But I am still sad to see Arc go, and I hope this extension brings a little comfort to others who feel the same.
+Then ⌘T. I live in a launcher (die-hard Raycast user here), so this one matters a lot to me. I tried Arc Search and a few extensions, and none of them searched the right things or ranked them well. So I ported the data sources and ranking algorithm from Chrome's address bar and added some of Arc's design on top. It's now a launcher I can actually live with.
+
+Of the features I really care about, the only one missing is Arc's profile switching. I looked into doing it from an extension, and every approach I found was a hack: fragile, a lot of work, and full of per-site cookie quirks. So it's not supported for now. I'll come back to it when Chrome's APIs allow more.
+
+Going back to Chrome isn't so bad. Cross-platform works better again, and extensions support Chrome first. But I'm still sad to see Arc go. If you miss Arc too, I hope this helps a little.
 
 ## Getting started
 
