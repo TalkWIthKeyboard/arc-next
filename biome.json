@@ -1,0 +1,11 @@
+{
+  "formatter": { "indentStyle": "space", "lineWidth": 160 },
+  "javascript": { "formatter": { "quoteStyle": "single" } },
+  "files": { "includes": ["**", "!node_modules"] },
+  "linter": {
+    "rules": {
+      "a11y": { "noNoninteractiveElementToInteractiveRole": "off" },
+      "style": { "noDescendingSpecificity": "off" }
+    }
+  }
+}

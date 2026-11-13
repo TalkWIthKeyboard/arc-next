@@ -1,0 +1,71 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<title>arc-next</title>
+<style>
+  /* Colors follow Chrome's Material theme: the whole palette is derived from one theme (seed) color.
+     An extension cannot read the browser theme, so --seed defaults to the theme color in the author's Chrome;
+     change this one value when the Chrome theme changes.
+     Which tone each role uses comes from Chromium's ui/color/sys_color_mixer.cc (in dark mode: panel =
+     Secondary 25, address bar = Secondary 15, text = Neutral 90, URL = Primary 80).
+     ponytail: tones approximate Material's HCT with oklch lightness/chroma, so colors can differ slightly from
+     Chrome's own; for a pixel-exact match, replace them with values computed by Material Color Utilities. */
+  :root { --seed: #8cabe4;
+    --base: oklch(from var(--seed) .983 .004 h); --field: oklch(from var(--seed) .955 .014 h);
+    --fg: oklch(from var(--seed) .224 .008 h); --dim: oklch(from var(--seed) .396 .008 h);
+    --accent: oklch(from var(--seed) .483 .12 h); --outline: oklch(from var(--seed) .828 .08 h);
+    --hover: oklch(from var(--seed) .224 .008 h / .06); --ring: rgb(0 0 0 / .12); }
+  @media (prefers-color-scheme: dark) {
+    :root { --base: oklch(from var(--seed) .354 .033 h); --field: oklch(from var(--seed) .267 .033 h);
+      --fg: oklch(from var(--seed) .914 .008 h); --dim: oklch(from var(--seed) .828 .008 h);
+      --accent: oklch(from var(--seed) .828 .08 h); --outline: oklch(from var(--seed) .569 .033 h);
+      --hover: oklch(from var(--seed) .99 .004 h / .1); --ring: rgb(255 255 255 / .1); }
+  }
+  * { box-sizing: border-box; }
+  html { height: 100%; background: transparent; }
+  /* The panel's top edge is fixed where a full five-row panel would be centered, so it does not jump as
+     results come and go. */
+  body { margin: 0; height: 100%; padding-top: max(6vh, calc(50vh - 180px));
+    font: 400 15px/1.25 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--fg);
+    -webkit-font-smoothing: antialiased; }
+  /* Shapes come from the source of Chromium's address bar dropdown: panel radius 16; pill-shaped address bar;
+     result rows flush left with a half-round right end and a 16px right margin; a 4px indicator bar on the
+     selected row; 28px icon tile with radius 4; fully rounded buttons.
+     Chrome's own sizes are 34 (address bar) and 40 (row); they are scaled by 1.2 here. */
+  #box { width: min(720px, 92vw); max-height: min(76vh, 640px); margin: 0 auto; padding-bottom: 8px;
+    display: flex; flex-direction: column; background: var(--base); border-radius: 16px;
+    box-shadow: 0 0 0 1px var(--ring), 0 24px 64px rgb(0 0 0 / .42), 0 4px 12px rgb(0 0 0 / .2); overflow: hidden; }
+  #top { display: flex; align-items: center; gap: 12px; height: 44px; margin: 8px; padding: 0 16px; flex: none;
+    background: var(--field); border-radius: 22px; }
+  #box:has(#list:empty) { padding-bottom: 0; }
+  #top svg { width: 16px; height: 16px; flex: none; color: var(--dim); }
+  #q { all: unset; flex: 1; min-width: 0; font-size: 17px; caret-color: var(--accent); }
+  #q::placeholder { color: var(--dim); }
+  #list { margin: 0; padding: 0; list-style: none; overflow-y: auto; }
+  #list:empty { display: none; }
+  li { position: relative; display: flex; align-items: center; gap: 12px; height: 48px; margin-right: 16px;
+    padding: 0 10px 0 16px; border-radius: 0 24px 24px 0; cursor: default; flex: none; }
+  .ico { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 4px;
+    background: var(--field); color: var(--dim); }
+  .ico img, .ico svg { width: 16px; height: 16px; }
+  .txt { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sub { color: var(--accent); }
+  .sub::before { content: " - "; color: var(--dim); }
+  .sub.plain { color: var(--dim); }
+  .act { flex: none; display: flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px 0 12px;
+    border: 1px solid var(--outline); border-radius: 14px; color: var(--accent); font-size: 13px; font-weight: 500; }
+  .act svg { width: 14px; height: 14px; }
+  li[aria-selected="true"] { background: var(--hover); }
+  li[aria-selected="true"]::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--accent); border-radius: 0 4px 4px 0; }
+</style>
+<div id="box">
+  <div id="top">
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+    <input id="q" autocomplete="off" spellcheck="false" placeholder="Search or Enter URL..." aria-controls="list">
+  </div>
+  <ul id="list" role="listbox"></ul>
+</div>
+<template id="i-search"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></template>
+<template id="i-arrow"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></template>
+<script type="module" src="palette.js"></script>

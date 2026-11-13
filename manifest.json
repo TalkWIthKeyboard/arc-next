@@ -1,0 +1,74 @@
+{
+  "manifest_version": 3,
+  "name": "arc-next",
+  "version": "0.1.0",
+  "description": "Bring a bit of Arc back to Chrome, built on what Chrome already has.",
+  "permissions": ["tabs", "tabGroups", "storage", "sessions", "alarms", "bookmarks", "history", "favicon", "search", "scripting"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_title": "arc-next",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "24": "icons/icon24.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "64": "icons/icon64.png"
+    }
+  },
+  "commands": {
+    "palette": {
+      "suggested_key": {
+        "default": "Ctrl+T",
+        "mac": "Command+T"
+      },
+      "description": "Open Command Bar"
+    },
+    "reset": {
+      "suggested_key": {
+        "default": "Alt+R",
+        "mac": "MacCtrl+R"
+      },
+      "description": "Reset Tab"
+    },
+    "relock": {
+      "description": "Replace Pin with Current Page"
+    },
+    "space": {
+      "description": "Pin/Unpin Tab in Space"
+    },
+    "clear": {
+      "description": "Clear Today"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["palette.html"],
+      "matches": ["http://*/*", "https://*/*"]
+    }
+  ],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "24": "icons/icon24.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "64": "icons/icon64.png",
+    "96": "icons/icon96.png",
+    "128": "icons/icon128.png",
+    "256": "icons/icon256.png"
+  },
+  "options_ui": {
+    "page": "onboarding.html",
+    "open_in_tab": true
+  }
+}
