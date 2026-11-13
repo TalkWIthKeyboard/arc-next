@@ -42,7 +42,12 @@ Two related actions live in the same right-click menu:
 
 ### 2. Install the extension
 
-1. Download this repository and unzip it. Remember where the folder is.
+1. [Download the ZIP](https://github.com/TalkWIthKeyboard/arc-next/archive/refs/heads/main.zip) and unzip it. You get a folder named `arc-next-main`; remember where it is. If you use git, you can clone instead:
+
+   ```sh
+   git clone https://github.com/TalkWIthKeyboard/arc-next.git
+   ```
+
 2. Type `chrome://extensions` in Chrome's address bar and press Enter to open the Extensions page.
 3. Turn on **Developer mode** in the top right corner.
 
@@ -52,7 +57,7 @@ Two related actions live in the same right-click menu:
 
    ![Click Load unpacked](docs/install-2-load-unpacked.png)
 
-5. In the file picker, select the folder you unzipped (the one that directly contains `manifest.json`) and confirm.
+5. In the file picker, select that folder (`arc-next-main`, or `arc-next` if you cloned; it is the one that directly contains `manifest.json`) and confirm.
 6. The arc-next card appears in the list. The extension is installed.
 
    ![The arc-next card after installing](docs/install-3-loaded.png)
