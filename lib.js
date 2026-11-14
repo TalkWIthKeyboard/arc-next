@@ -151,3 +151,79 @@ export const asUrl = (q) =>
     : /^(localhost|[\w-]+(\.[\w-]+)+)(:\d+)?(\/\S*)?$/i.test(q)
       ? (/^(localhost|\d+\.\d+\.\d+\.\d+)(:|\/|$)/i.test(q) ? 'http://' : 'https://') + q
       : null;
+
+// ── Arc import ──────────────────────────────────────────────────────────────────────────────────────────────
+// Reads either file Arc can give. StorableSidebar.json is Arc's own sidebar store: exact, with Favorites, pinned
+// and Today tabs kept apart. "Arc Data Export.md" (Arc's Settings → Advanced → Export Data) is coarser: one "#"
+// per Space, folders as "##"/"###", and a "## Favorites" section that also holds the loose pinned and Today tabs.
+// Returns { spaces: [{ title, sections: [{ kind, path, urls }] }], skipped }: web URLs only, no empty sections.
+// kind is favorites | pinned | today | folder; path is the folder path, e.g. ['Study', 'English'].
+export function parseArc(text) {
+  const spaces = [];
+  let skipped = 0;
+  const add = (space, kind, path, urls) => {
+    const web = urls.filter((u) => /^https?:/.test(u));
+    skipped += urls.length - web.length;
+    if (web.length) space.sections.push({ kind, path, urls: web });
+  };
+
+  if (text.trimStart().startsWith('{')) {
+    const box = JSON.parse(text).sidebar.containers.find((c) => c.items);
+    const by = new Map(box.items.filter((x) => x.id).map((x) => [x.id, x]));
+    const kids = (id) => (by.get(id)?.childrenIds || []).map((k) => by.get(k)).filter(Boolean);
+    const walk = (space, id, kind, path) => {
+      const all = kids(id).flatMap((k) => (k.data?.splitView ? kids(k.id) : [k])); // a split view counts as its tabs
+      add(
+        space,
+        kind,
+        path,
+        all.filter((k) => k.data?.tab).map((k) => k.data.tab.savedURL),
+      );
+      for (const k of all) if (k.data?.list) walk(space, k.id, 'folder', [...path, k.title || 'Folder']);
+    };
+    // Both lists alternate key, value: topAppsContainerIDs is profile, container; a Space's containerIDs is
+    // "pinned", container, "unpinned", container. Favorites belong to a profile, shared by its Spaces.
+    const profile = (p) => p?.custom?._0?.directoryBasename ?? 'default';
+    const tops = box.topAppsContainerIDs || [];
+    // A miss gives list[0], which is a key, not a container id: walk() finds nothing under it.
+    const at = (list, hit) => list[list.findIndex((x, i) => i % 2 === 0 && hit(x)) + 1];
+    for (const s of box.spaces.filter((x) => x?.containerIDs)) {
+      const space = { title: s.title || 'Space', sections: [] };
+      const fav = at(tops, (x) => profile(x) === profile(s.profile));
+      const own = (key) => at(s.containerIDs, (x) => x === key);
+      walk(space, fav, 'favorites', []);
+      walk(space, own('pinned'), 'pinned', []);
+      walk(space, own('unpinned'), 'today', []);
+      spaces.push(space);
+    }
+  } else {
+    let space = null;
+    let cur = null;
+    let path = [];
+    const flush = () => {
+      if (space && cur) add(space, cur.kind, cur.path, cur.urls);
+      cur = null;
+    };
+    for (const line of text.split(/\r?\n/)) {
+      const h = /^(#+)\s+(.+)$/.exec(line);
+      if (h && h[1].length === 1) {
+        flush();
+        space = { title: h[2].trim(), sections: [] };
+        spaces.push(space);
+        path = [];
+      } else if (h && space) {
+        flush();
+        const depth = h[1].length - 2;
+        const fav = depth === 0 && h[2].trim() === 'Favorites';
+        path = fav ? [] : [...path.slice(0, depth), h[2].trim()];
+        cur = { kind: fav ? 'favorites' : 'folder', path, urls: [] };
+      } else if (cur && line.startsWith('- ')) {
+        const item = line.slice(2).trim();
+        cur.urls.push(item.startsWith('[') ? (/\((\S+)\)$/.exec(item)?.[1] ?? item) : item); // tolerate "[title](url)"
+      }
+    }
+    flush();
+  }
+  if (!spaces.length) throw new Error('No Arc Spaces in this file');
+  return { spaces, skipped };
+}

@@ -87,7 +87,31 @@ All the commands are listed below. The last three can stay as they are, or be se
 | Clear Today                   | Your choice         | Cleans up the current window right now                         |
 | Replace Pin with Current Page | Your choice         | Makes the current page this tab's new pinned URL               |
 
-### 4. Pin a page and try Favorites
+### 4. Bring your Arc sidebar over (optional)
+
+The welcome page that opens after installing has an import step. To open it again later, click **Details** on the arc-next card and then **Extension options**.
+
+1. On the import step, click the box, press ⌘⇧G in the file picker, and paste this path:
+
+   ```
+   ~/Library/Application Support/Arc/StorableSidebar.json
+   ```
+
+   On Windows, or if that file is gone, open Arc's Settings → Advanced → **Export Data** and use `Arc Data Export.md` instead. That file is coarser: its Favorites section also contains the pinned and Today tabs that were not in a folder.
+
+2. Tick the Spaces that belong in this Chrome profile. Arc Spaces are tied to profiles, so import each Space in the Chrome profile it belongs to.
+3. Check where each part goes, then click **Import**.
+
+| In Arc                  | In Chrome                                      |
+| ----------------------- | ---------------------------------------------- |
+| Favorites               | Pinned tabs                                    |
+| Pinned tabs in a Space  | A group named `🧲 Life`                        |
+| A folder, nested or not | Its own group, such as `🧲 Life/Study/English` |
+| Today tabs              | Skipped unless you choose otherwise            |
+
+Imported tabs load once so they get a title and an icon, then go to sleep until you click them. Importing the same file twice does not open anything twice. Split views come over as separate tabs; Easels, notes and Boosts do not come over.
+
+### 5. Pin a page and try Favorites
 
 1. Open a site you visit every day.
 2. Right-click its tab in the sidebar and choose **Pin**. The tab shrinks to an icon and moves to the top of the sidebar.
@@ -97,7 +121,7 @@ All the commands are listed below. The last three can stay as they are, or be se
 
 To really remove it, right-click the tab and choose **Unpin**.
 
-### 5. Create your first Space
+### 6. Create your first Space
 
 1. Open a page and press ⌘D. A tab group named `🧲 Space` appears at the top of the sidebar, with this page already in it.
 2. Open another page and press ⌘D. It joins the same group. You can also drag tabs in.
@@ -106,7 +130,7 @@ To really remove it, right-click the tab and choose **Unpin**.
 
 To rename the group, click its title. Call it anything you like, as long as the name still starts with 🧲. Ordinary tabs outside the group are Arc's Today area.
 
-### 6. Find things with ⌘T
+### 7. Find things with ⌘T
 
 Press ⌘T on any page and a search box appears in the middle of the screen. Before you type, it lists your other open pages:
 
@@ -125,6 +149,7 @@ Type a few letters:
 
 - **Today tabs left idle for more than 12 hours are closed automatically**, while pinned pages and pages in a Space are reset instead. Closed pages stay in your history, so ⌘⇧T or a ⌘T search brings them back. To turn automatic cleanup off, set `ARCHIVE_AFTER_HOURS` in `background.js` to 0.
 - **The search overlay does not appear on the new tab page or on `chrome://` pages.** Chrome does not allow extensions to show content there, so ⌘T opens a native new tab instead.
+- **For Arc's mini player, turn on Chrome's own.** Open `chrome://settings/content/autoPictureInPicture` and choose **Sites can enter picture-in-picture automatically**. A video that is playing with sound then moves into a small window when you switch tabs and goes back when you return. Chrome keeps one mini player at a time, only on `https` pages, and decides where the window sits.
 - **⌘D is Chrome's "Bookmark this tab" by default.** Once it belongs to arc-next, use the star in the address bar to add bookmarks.
 - **The overlay's colors do not follow your Chrome theme automatically.** An extension cannot read the browser's theme color. The colors are derived from one value, `--seed`, at the top of `palette.html`; change it when you change your theme.
 - All data is read locally. The extension makes no network requests.

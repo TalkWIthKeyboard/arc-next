@@ -51,6 +51,20 @@
   .ghost { color: var(--dim); }
   .link { color: var(--accent); padding-inline: 4px; }
 
+  code { font: 12px/1.5 ui-monospace, Menlo, monospace; background: var(--key); padding: 2px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+  .drop { min-height: 250px; border: 2px dashed var(--line); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; color: var(--dim); text-align: center; padding: 16px; }
+  .drop:hover, .drop:focus-within { border-color: var(--accent); }
+  .drop b { color: var(--fg); font-weight: 600; }
+  .err { color: var(--coral); font-size: 13px; }
+  .arc { border: 1px solid var(--line); border-radius: 12px; background: var(--bg); max-height: 320px; overflow-y: auto; padding: 6px 10px 10px; }
+  .sp { display: flex; align-items: center; gap: 8px; font-weight: 600; padding: 8px 0 4px; cursor: pointer; }
+  .sp input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; }
+  .sec { display: flex; align-items: center; gap: 8px; padding: 3px 0 3px 24px; font-size: 13px; }
+  .sec.off { opacity: .45; }
+  .sec span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sec i { font-style: normal; color: var(--dim); font-variant-numeric: tabular-nums; margin-right: auto; }
+  select { font: inherit; font-size: 13px; color: var(--fg); background: var(--key); border: 1px solid var(--line); border-radius: 6px; padding: 2px 4px; }
+
   /* A small schematic browser window for each step. */
   .win { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--bg); display: grid; grid-template-columns: 38% 1fr; min-height: 250px; position: relative; }
   .win.top-tabs { grid-template-columns: 1fr; grid-template-rows: 34px 1fr; }
@@ -74,6 +88,8 @@
   .bar .in { height: 24px; border-radius: 12px; background: var(--key); font-size: 11px; color: var(--dim); display: flex; align-items: center; padding: 0 10px; }
   .bar .r { height: 20px; border-radius: 0 10px 10px 0; display: flex; align-items: center; font-size: 11px; padding: 0 8px; color: var(--dim); margin-left: -8px; }
   .bar .r.sel { background: var(--soft); color: var(--fg); border-left: 3px solid var(--accent); }
+  .mini { position: absolute; right: 10px; bottom: 10px; width: 38%; aspect-ratio: 16 / 9; border-radius: 8px; background: var(--fg); outline: 2px solid var(--coral); outline-offset: 1px; box-shadow: 0 8px 24px rgb(0 0 0 / .3); }
+  .mini::after { content: ""; position: absolute; left: 50%; top: 50%; translate: -35% -50%; border: 9px solid transparent; border-left: 15px solid var(--panel); border-right: 0; }
   .hero { display: grid; place-items: center; min-height: 250px; }
   .hero img { width: 150px; height: 150px; }
 </style>

@@ -1,9 +1,9 @@
 // First-run walkthrough. Each step asks for one real action; the page watches the browser and ticks the step
 // off by itself wherever an extension is able to know (shortcuts, pinned tabs, the 🧲 group, the overlay).
-import { MARK } from './lib.js';
+import { MARK, parseArc } from './lib.js';
 
 const app = document.getElementById('app');
-const state = { step: 0, sidebar: false, keys: {}, pinned: false, space: false, search: false };
+const state = { step: 0, sidebar: false, keys: {}, pinned: false, space: false, search: false, arc: null, pick: {}, dest: {}, imported: null, err: '' };
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const tab = (label, hot) => `<div class="t${hot ? ' hot' : ''}">${label}</div>`;
@@ -19,9 +19,9 @@ const STEPS = [
   {
     next: 'Get started',
     art: () => hero,
-    body: () => `<h1>Bring a bit of Arc back to Chrome</h1>
-      <p>arc-next adds the few things Chrome is missing: a command bar, pages that stay put, and a Today area that cleans itself up.</p>
-      <p class="note">Setup takes about two minutes. You will do each step once, right here.</p>`,
+    body: () => `<h1>Welcome to arc-next</h1>
+      <p>It brings some of the Arc experience back to Chrome.</p>
+      <p class="note">Setup takes about two minutes.</p>`,
   },
 
   {
@@ -38,7 +38,7 @@ const STEPS = [
             'top-tabs',
           ),
     body: () => `<h1>Move your tabs to the side</h1>
-      <p>Chrome's own vertical tabs are your sidebar. arc-next does not draw another one.</p>
+      <p>Chrome's own vertical tabs are your sidebar.</p>
       <ol><li>Right-click the tab strip at the top of the window.</li><li>Choose <b>Show Tabs Vertically</b>.</li></ol>`,
   },
 
@@ -53,7 +53,53 @@ const STEPS = [
       ${check(state.keys.palette, 'Open Command Bar', esc(state.keys.palette), 'Not set yet')}
       ${check(state.keys.space, 'Pin/Unpin Tab in Space', esc(state.keys.space), 'Not set yet')}
       ${check(state.keys.reset, 'Reset Tab', esc(state.keys.reset), 'Not set yet')}
-      <p class="note">Click the pencil next to each command, then press the keys. This page updates as soon as they are set.</p>`,
+      <p class="note">Click the pencil next to each command, then press the keys.</p>`,
+  },
+
+  {
+    drop: true,
+    next: () => (state.imported ? 'Continue' : 'Import'),
+    skip: () => !state.imported,
+    done: () => !!state.imported || jobs().length > 0,
+    onNext: async () => {
+      if (state.imported) return;
+      state.imported = await importArc();
+      return false; // stay here to show the result
+    },
+    art: () => {
+      if (!state.arc)
+        return `<label class="drop"><input type="file" id="file" accept=".json,.md" hidden><b>Drop the file here</b><span>or click to choose it</span>${
+          state.err ? `<span class="err">${esc(state.err)}</span>` : ''
+        }</label>`;
+      const off = state.imported ? 'disabled' : '';
+      return `<div class="arc">${state.arc.spaces
+        .map(
+          (sp, i) => `<label class="sp"><input type="checkbox" data-space="${i}" ${state.pick[i] ? 'checked' : ''} ${off}>${esc(sp.title)}</label>
+          ${sp.sections
+            .map(
+              (sec, j) => `<div class="sec${state.pick[i] ? '' : ' off'}"><span>${esc(sec.path.join('/') || LABEL[sec.kind])}</span><i>${sec.urls.length}</i>
+              <select data-sec="${i}:${j}" aria-label="Where it goes" ${state.pick[i] ? off : 'disabled'}>${Object.entries(DEST)
+                .map(([v, label]) => `<option value="${v}" ${dest(i, j) === v ? 'selected' : ''}>${label}</option>`)
+                .join('')}</select></div>`,
+            )
+            .join('')}`,
+        )
+        .join('')}</div>`;
+    },
+    body: () => `<h1>Bring your Arc sidebar over</h1>
+      <p>Favorites become pinned tabs. Spaces and folders become ${MARK} groups.</p>
+      ${
+        state.imported
+          ? check(true, 'Your Arc pages are in the sidebar', `${state.imported.tabs} tabs`, '')
+          : state.arc
+            ? `<p>Tick the Spaces that belong in this Chrome profile, then choose where each part goes. Nothing changes until you press Import.</p>
+              ${state.arc.md ? '<p class="note">In this file, Favorites also includes pinned and Today tabs that were not in a folder. Arc exports them together.</p>' : ''}
+              ${state.arc.skipped ? `<p class="note">${state.arc.skipped === 1 ? '1 link that is not a web page was' : `${state.arc.skipped} links that are not web pages were`} left out.</p>` : ''}
+              <button class="link" type="button" id="refile">Choose another file</button>`
+            : `<ol><li>Click the box, then press <kbd>⌘⇧G</kbd> in the file picker.</li>
+              <li>Paste this path and press Enter: <button class="link" type="button" id="copy">Copy path</button><br><code>${ARC_FILE}</code></li></ol>
+              <p class="note">On Windows, or if that file is gone: in Arc, open Settings → Advanced → Export Data, and drop <b>Arc Data Export.md</b> here instead.</p>`
+      }`,
   },
 
   {
@@ -69,7 +115,7 @@ const STEPS = [
           ? `<p>Now try it in a pinned tab:</p>
         <ol><li>Click around, then press ${key('reset', '⌃R')} to go back to the pinned page.</li>
         <li>Press <kbd>⌘W</kbd>. It resets instead of closing.</li><li>Click a link to another site. It opens in a new tab.</li></ol>`
-          : '<p class="note">Open any site in another tab and pin it. This page notices when you do.</p>'
+          : '<p class="note">Open any site in another tab and pin it.</p>'
       }`,
   },
 
@@ -114,6 +160,20 @@ const STEPS = [
   },
 
   {
+    next: 'Done',
+    skip: true,
+    extra: '<button class="link" type="button" id="pip">Open the setting ↗</button>',
+    art: () =>
+      win(
+        rail(`${pins(true)}<div class="grp">${MARK} Space</div><div class="indent">${tab('Docs')}</div>${tab('Video', true)}`) +
+          page('<div class="mini"></div>'),
+      ),
+    body: () => `<h1>Keep videos in a mini player</h1>
+      <p>Chrome can move a playing video into a small window when you switch tabs, and put it back when you return. It is off until you allow it.</p>
+      <ol><li>Open the setting.</li><li>Choose <b>Sites can enter picture-in-picture automatically</b>.</li></ol>`,
+  },
+
+  {
     next: 'Start browsing',
     art: () => hero,
     onNext: async () => {
@@ -122,7 +182,7 @@ const STEPS = [
     },
     body: () => `<h1>You're all set</h1>
       <p>${key('palette', '⌘T')} find &nbsp; ${key('space', '⌘D')} add to Space &nbsp; ${key('reset', '⌃R')} reset &nbsp; <kbd>⌘W</kbd> resets pinned pages</p>
-      <div class="warn"><b>One thing to know:</b> tabs in Today that sit unused for 12 hours are closed automatically. They stay in your history, so <kbd>⌘⇧T</kbd> or a Command Bar search brings them back. Favorites and Space pages are never closed, only reset.</div>`,
+      <div class="warn">Today tabs left unused for 12 hours are closed automatically. <kbd>⌘⇧T</kbd> brings them back.</div>`,
   },
 ];
 
@@ -130,6 +190,99 @@ const STEPS = [
 function key(name, suggested) {
   return `<kbd>${esc(state.keys[name] || suggested)}</kbd>`;
 }
+
+// ── Arc import ──
+const ARC_FILE = '~/Library/Application Support/Arc/StorableSidebar.json';
+const LABEL = { favorites: 'Favorites', pinned: 'Pinned', today: 'Today' };
+const DEST = { pin: 'Pinned tabs', group: `${MARK} group`, skip: 'Skip' };
+const dest = (i, j) => state.dest[`${i}:${j}`] || { favorites: 'pin', today: 'skip' }[state.arc.spaces[i].sections[j].kind] || 'group';
+
+// What Import would do right now: [{ pin, title, folder, urls }], one entry per section that is not skipped.
+function jobs() {
+  if (!state.arc) return [];
+  return state.arc.spaces.flatMap((sp, i) =>
+    state.pick[i]
+      ? sp.sections.flatMap((sec, j) =>
+          dest(i, j) === 'skip'
+            ? []
+            : [{ pin: dest(i, j) === 'pin', title: [`${MARK} ${sp.title}`, ...sec.path].join('/'), folder: sec.kind === 'folder', urls: sec.urls }],
+        )
+      : [],
+  );
+}
+
+async function load(file) {
+  try {
+    const text = await file.text();
+    state.arc = { ...parseArc(text), md: !text.trimStart().startsWith('{') };
+    state.pick = { 0: state.arc.spaces.length === 1 }; // with several Spaces, the user says which ones live in this profile
+    state.dest = {};
+    state.err = '';
+  } catch {
+    state.err = 'That does not look like an Arc file.';
+  }
+  render();
+}
+
+// Imported tabs load once, so the sidebar shows a title and an icon, and are then put to sleep.
+const loading = new Set();
+chrome.tabs.onUpdated.addListener((id, info) => {
+  if (info.status === 'complete' && loading.delete(id)) setTimeout(() => chrome.tabs.discard(id).catch(() => {}), 2000);
+});
+
+async function importArc() {
+  const { windowId } = await chrome.tabs.getCurrent();
+  // Pages that are already pinned or in a 🧲 group (background.js keeps their URLs) are not opened twice.
+  const have = new Set(Object.values((await chrome.storage.session.get('locks')).locks || {}));
+  const fresh = (urls) => urls.filter((u) => !have.has(u) && have.add(u));
+  let count = 0;
+  const open = async (url, pinned) => {
+    const t = await chrome.tabs.create({ url, pinned, windowId, active: false });
+    count++;
+    loading.add(t.id);
+    return t.id;
+  };
+  const todo = jobs();
+  for (const job of todo.filter((x) => x.pin)) for (const url of fresh(job.urls)) await open(url, true);
+
+  const groups = new Map(); // sections with the same title share one group
+  for (const job of todo.filter((x) => !x.pin)) {
+    const g = groups.get(job.title) || { folder: job.folder, urls: [] };
+    g.urls.push(...job.urls);
+    groups.set(job.title, g);
+  }
+  const existing = await chrome.tabGroups.query({ windowId });
+  const pinned = (await chrome.tabs.query({ windowId, pinned: true })).length;
+  // Each new group goes to the top of the strip, so walk them backwards to end up in Arc's order.
+  for (const [title, g] of [...groups].reverse()) {
+    const tabIds = [];
+    for (const url of fresh(g.urls)) tabIds.push(await open(url, false));
+    if (!tabIds.length) continue;
+    const old = existing.find((x) => x.title === title);
+    if (old) {
+      await chrome.tabs.group({ tabIds, groupId: old.id });
+      continue;
+    }
+    const groupId = await chrome.tabs.group({ tabIds, createProperties: { windowId } });
+    await chrome.tabGroups.update(groupId, { title, collapsed: g.folder });
+    await chrome.tabGroups.move(groupId, { index: pinned });
+  }
+  return { tabs: count };
+}
+
+app.addEventListener('change', (e) => {
+  const t = e.target;
+  if (t.id === 'file') return t.files[0] && load(t.files[0]);
+  if (t.dataset.space) state.pick[t.dataset.space] = t.checked;
+  if (t.dataset.sec) state.dest[t.dataset.sec] = t.value;
+  render();
+});
+// Always cancel the default, or dropping a file anywhere on the page would navigate away from the walkthrough.
+addEventListener('dragover', (e) => e.preventDefault());
+addEventListener('drop', (e) => {
+  e.preventDefault();
+  if (STEPS[state.step].drop && !state.imported && e.dataTransfer.files[0]) load(e.dataTransfer.files[0]);
+});
 
 let last = '';
 function render() {
@@ -141,13 +294,15 @@ function render() {
     <div class="stage"><div class="copy">${s.body()}</div><div>${s.art()}</div></div>
     <div class="actions">
       ${state.step > 0 ? '<button class="ghost" type="button" id="back">Back</button>' : ''}
-      <button class="primary" type="button" id="next" ${waiting ? 'disabled' : ''}>${s.next}</button>
+      <button class="primary" type="button" id="next" ${waiting ? 'disabled' : ''}>${typeof s.next === 'function' ? s.next() : s.next}</button>
       ${s.extra || ''}
-      ${s.skip && (waiting || !s.done) ? '<button class="ghost" type="button" id="skip">Skip</button>' : ''}
+      ${(typeof s.skip === 'function' ? s.skip() : s.skip && (waiting || !s.done)) ? '<button class="ghost" type="button" id="skip">Skip</button>' : ''}
     </div>`;
   if (html === last) return; // nothing changed: keep focus and avoid flicker while polling
   last = html;
+  const scroll = app.querySelector('.arc')?.scrollTop;
   app.innerHTML = html;
+  if (scroll) app.querySelector('.arc')?.scrollTo(0, scroll);
   const on = (id, fn) => {
     const el = document.getElementById(id);
     if (el) el.onclick = fn;
@@ -159,9 +314,16 @@ function render() {
   on('back', () => go(state.step - 1));
   on('skip', () => go(state.step + 1));
   on('next', async () => {
-    await s.onNext?.();
+    document.getElementById('next').disabled = true; // an import takes a moment; no double clicks
+    if ((await s.onNext?.()) === false) return render();
     go(state.step + 1);
   });
+  on('copy', () => navigator.clipboard.writeText(ARC_FILE));
+  on('refile', () => {
+    state.arc = null;
+    render();
+  });
+  on('pip', () => chrome.tabs.create({ url: 'chrome://settings/content/autoPictureInPicture' }));
   on('shortcuts', () => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }));
 }
 
@@ -180,12 +342,7 @@ chrome.runtime.onMessage.addListener((msg) => {
     render();
   }
 });
-chrome.tabs.onUpdated.addListener((_, info) => {
-  if (info.pinned !== undefined) detect();
-});
-chrome.tabGroups.onUpdated.addListener(detect);
-chrome.tabGroups.onRemoved.addListener(detect);
-setInterval(detect, 1000); // shortcut changes fire no event, so poll
+setInterval(detect, 1000); // shortcut changes fire no event, so poll; pins and groups ride along
 
 render();
 detect();

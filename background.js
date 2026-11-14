@@ -12,12 +12,14 @@ const managed = (groupId) =>
 // State: locks = { tabId: URL the tab is locked to } for guarded tabs (natively pinned, or in a managed group);
 // homes = { tabId: { groupId, title, color } } for the ones in a group, so a closed tab can be put back;
 // orphans = locked URLs that currently have no tab (window closed, or tabs not restored yet after a restart).
-// All live in session storage, which survives service worker suspension; the URLs are also saved to local
-// storage to be matched back by host after a restart.
+// All live in session storage, which survives service worker suspension but not a browser restart. After a
+// restart the locks are matched back by host from the sidebar snapshot in local storage.
 async function getState() {
   const { locks, orphans = [], homes = {} } = await chrome.storage.session.get(['locks', 'orphans', 'homes']);
   if (locks) return { locks, orphans, homes };
-  const { saved = [] } = await chrome.storage.local.get('saved');
+  // The locked URLs outlive a restart inside the sidebar snapshot (see snapshot() below).
+  const { sidebar } = await chrome.storage.local.get('sidebar');
+  const saved = sidebar ? [...sidebar.pinned, ...sidebar.groups.flatMap((g) => g.urls)] : [];
   const [tabs, groups] = await Promise.all([chrome.tabs.query({}), chrome.tabGroups.query({})]);
   const mine = new Map(groups.filter((g) => g.title?.startsWith(MARK)).map((g) => [g.id, g]));
   const guarded = tabs.filter((t) => t.pinned || (mine.has(t.groupId) && isWeb(t.pendingUrl || t.url)));
@@ -27,14 +29,62 @@ async function getState() {
       .filter((t) => !t.pinned && state.locks[t.id])
       .map((t) => [t.id, { groupId: t.groupId, title: mine.get(t.groupId).title, color: mine.get(t.groupId).color }]),
   );
-  return save(state);
+  return save(state, false);
 }
 
-async function save(state) {
+// remember = false for changes the user did not make (windows closing, Chrome still restoring the session):
+// those must not overwrite the snapshot below.
+async function save(state, remember = true) {
   state.orphans.splice(0, state.orphans.length - 50); // keep only the latest 50 so it cannot grow forever
   await chrome.storage.session.set(state);
-  await chrome.storage.local.set({ saved: [...Object.values(state.locks), ...state.orphans] });
+  await started;
+  if (remember && !settling) await snapshot(state);
   return state;
+}
+
+// A full copy of the sidebar in local storage: the pinned URLs, and every managed group with its title, color
+// and URLs, in tab order. If Chrome starts without them (session restore off, or a crash), restore() rebuilds it.
+let settling = false;
+async function snapshot({ locks, homes }) {
+  const [tabs, live] = await Promise.all([chrome.tabs.query({}), chrome.tabGroups.query({})]);
+  const pinned = [];
+  const groups = new Map();
+  for (const t of tabs) {
+    const url = locks[t.id];
+    const home = homes[t.id];
+    if (!url) continue;
+    if (!home) pinned.push(url);
+    else if (groups.has(home.title)) groups.get(home.title).urls.push(url);
+    else groups.set(home.title, { title: home.title, color: home.color, collapsed: !!live.find((g) => g.id === home.groupId)?.collapsed, urls: [url] });
+  }
+  await chrome.storage.local.set({ sidebar: { pinned, groups: [...groups.values()] } });
+}
+
+async function restore() {
+  const { sidebar } = await chrome.storage.local.get('sidebar');
+  await new Promise((r) => setTimeout(r, 4000)); // give Chrome's own session restore the first go
+  settling = false;
+  if (!sidebar) return update(() => {}); // nothing saved yet: take the first snapshot
+  const [tabs, groups] = await Promise.all([chrome.tabs.query({}), chrome.tabGroups.query({})]);
+  // Chrome brings pinned tabs back by itself even with session restore off, but not groups, so the two are
+  // checked separately: pinned tabs are rebuilt only if none came back, groups one by one by title.
+  // ponytail: only at startup, and a group that came back short is left as it is. If Chrome starts with no
+  // window the rebuild waits for the next start; compare per URL on windows.onCreated if that ever matters.
+  const pins = tabs.some((t) => t.pinned) ? [] : sidebar.pinned;
+  const lost = sidebar.groups.filter((g) => !groups.some((x) => x.title === g.title));
+  if (!pins.length && !lost.length) return update(() => {}); // all there: bring the snapshot up to date
+  const win = await chrome.windows.getLastFocused({ windowTypes: ['normal'] }).catch(() => null);
+  if (!win) return;
+  const open = (url, pinned) => chrome.tabs.create({ url, pinned, active: false, windowId: win.id }).then((t) => t.id);
+  for (const url of pins) await open(url, true);
+  const top = (await chrome.tabs.query({ windowId: win.id, pinned: true })).length;
+  for (const g of lost.reverse()) {
+    const tabIds = [];
+    for (const url of g.urls) tabIds.push(await open(url, false));
+    const groupId = await chrome.tabs.group({ tabIds, createProperties: { windowId: win.id } });
+    await chrome.tabGroups.update(groupId, { title: g.title, color: g.color, collapsed: g.collapsed });
+    await chrome.tabGroups.move(groupId, { index: top }); // each to the top, so walk them backwards
+  }
 }
 
 // Serialize read-modify-write so events arriving together do not overwrite each other. fn returns false for "no change".
@@ -43,9 +93,20 @@ const update = (fn) =>
   (chain = chain
     .then(async () => {
       const state = await getState();
-      if ((await fn(state)) !== false) await save(state);
+      const changed = await fn(state);
+      if (changed !== false) await save(state, changed !== 'closing');
     })
     .catch(console.error));
+
+// Session storage is emptied when the browser starts, so a missing flag means this is the first run of this
+// browser session. That is more reliable than runtime.onStartup, which can arrive after the first tab events.
+// While tabs are still trickling back, nothing is snapshotted.
+const started = chrome.storage.session.get('up').then(({ up }) => {
+  if (up) return;
+  settling = true;
+  chrome.storage.session.set({ up: true });
+  restore().catch(console.error);
+});
 
 const tell = (tabId, url) => chrome.tabs.sendMessage(tabId, { lockedHost: url ? host(url) : null }).catch(() => {});
 
@@ -101,6 +162,18 @@ chrome.tabGroups.onUpdated.addListener(async (group) => {
   for (const tab of await chrome.tabs.query({ groupId: group.id })) sync(tab.id, false);
 });
 
+// A tab that is put to sleep (Memory Saver, or tabs.discard) comes back under a new id: carry its lock over.
+chrome.tabs.onReplaced.addListener((added, removed) => {
+  update(({ locks, homes }) => {
+    if (!(removed in locks)) return false;
+    locks[added] = locks[removed];
+    delete locks[removed];
+    if (!homes[removed]) return;
+    homes[added] = homes[removed];
+    delete homes[removed];
+  });
+});
+
 chrome.tabs.onRemoved.addListener((tabId, { isWindowClosing, windowId }) => {
   update(async ({ locks, orphans, homes }) => {
     const url = locks[tabId];
@@ -109,14 +182,14 @@ chrome.tabs.onRemoved.addListener((tabId, { isWindowClosing, windowId }) => {
     delete locks[tabId];
     delete homes[tabId];
     // Window closing or browser quitting: keep the URL as an orphan for the tab to claim when it comes back.
-    if (isWindowClosing) return void orphans.push(url);
+    if (isWindowClosing) return orphans.push(url) && 'closing';
     // Guarded tabs cannot be closed: ⌘W only closes the current page. Reopen the tab in the same slot at its
     // locked URL. To really remove one, unpin it or move it out of the group first.
     // The slot comes from the newest "recently closed" entry, trusted only if it is the same kind of tab.
     const [last] = await chrome.sessions.getRecentlyClosed({ maxResults: 1 }).catch(() => []);
     const index = last?.tab && last.tab.pinned === !home ? last.tab.index : undefined;
     const tab = await chrome.tabs.create({ url, pinned: !home, windowId, index }).catch(() => null);
-    if (!tab) return void orphans.push(url); // the window is gone: keep it as an orphan
+    if (!tab) return orphans.push(url) && 'closing'; // the window is gone: keep it as an orphan
     locks[tab.id] = url;
     if (!home) return;
     // Back into its group; if that was the group's last tab the group is gone too, so recreate it.
