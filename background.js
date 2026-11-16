@@ -174,6 +174,7 @@ chrome.tabs.onReplaced.addListener((added, removed) => {
   });
 });
 
+const closedGroups = new Set();
 chrome.tabs.onRemoved.addListener((tabId, { isWindowClosing, windowId }) => {
   update(async ({ locks, orphans, homes }) => {
     const url = locks[tabId];
@@ -183,6 +184,15 @@ chrome.tabs.onRemoved.addListener((tabId, { isWindowClosing, windowId }) => {
     delete homes[tabId];
     // Window closing or browser quitting: keep the URL as an orphan for the tab to claim when it comes back.
     if (isWindowClosing) return orphans.push(url) && 'closing';
+    // "Close group": Chrome reports the group gone before its tabs, which is how it differs from ⌘W on the
+    // last tab (the group is still there then). Other locked tabs of the group still in `homes`, or an earlier
+    // tab of this burst, mean the user closed the whole group on purpose: let it go.
+    if (home && !(await chrome.tabGroups.get(home.groupId).catch(() => null))) {
+      if (closedGroups.has(home.groupId) || Object.values(homes).some((h) => h.groupId === home.groupId)) {
+        closedGroups.add(home.groupId);
+        return;
+      }
+    }
     // Guarded tabs cannot be closed: ⌘W only closes the current page. Reopen the tab in the same slot at its
     // locked URL. To really remove one, unpin it or move it out of the group first.
     // The slot comes from the newest "recently closed" entry, trusted only if it is the same kind of tab.
