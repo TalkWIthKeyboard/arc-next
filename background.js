@@ -296,15 +296,61 @@ async function palette() {
   chrome.tabs.create({});
 }
 
-chrome.commands.onCommand.addListener((cmd) => ({ palette, reset, relock, space, clear })[cmd]?.());
+// Arc's Peek: a link out of a pinned tab opens in a floating window over this one, gone once you click back.
+async function peek(url, windowId) {
+  const w = await chrome.windows.get(windowId);
+  const width = Math.round(w.width * 0.8);
+  const height = Math.round(w.height * 0.85);
+  const left = w.left + Math.round((w.width - width) / 2);
+  const top = w.top + Math.round((w.height - height) / 2);
+  const { id, tabs } = await chrome.windows.create({ url, type: 'popup', width, height, left, top });
+  const { peeks = [] } = await chrome.storage.session.get('peeks');
+  await chrome.storage.session.set({ peeks: [...peeks, { id, from: windowId }] });
+  // The page may have asked "am I a peek?" before the id was saved above: tell it again now.
+  chrome.tabs.sendMessage(tabs[0].id, { peek: true, key: await expandKey() }).catch(() => {});
+}
+const isPeek = async (windowId) => (await chrome.storage.session.get('peeks')).peeks?.some((p) => p.id === windowId) ?? false;
+// The key the user actually set for "Open Peek as a Tab" ('' when none), shown on the page's bar.
+const expandKey = async () => (await chrome.commands.getAll()).find((c) => c.name === 'expand')?.shortcut || '';
+
+// Focus moved to another Chrome window: close the peeks. Switching to another app (WINDOW_ID_NONE) keeps them.
+chrome.windows.onFocusChanged.addListener(async (id) => {
+  if (id === chrome.windows.WINDOW_ID_NONE) return;
+  const { peeks = [] } = await chrome.storage.session.get('peeks');
+  const gone = peeks.filter((p) => p.id !== id);
+  if (!gone.length) return;
+  await chrome.storage.session.set({ peeks: peeks.filter((p) => p.id === id) });
+  for (const p of gone) chrome.windows.remove(p.id).catch(() => {});
+});
+
+// ⌘O or the page's "Open as Tab" bar in a peek: keep the page as a normal tab in the window it came from. Chrome cannot move a tab out of a
+// popup window, so the URL is reopened there; scroll position and form input do not come along.
+async function expand(windowId) {
+  const win = await (windowId ? chrome.windows.get(windowId, { populate: true }) : chrome.windows.getLastFocused({ populate: true }));
+  const { peeks = [] } = await chrome.storage.session.get('peeks');
+  const p = peeks.find((x) => x.id === win.id);
+  const url = win.tabs?.[0]?.url;
+  if (!p || !url) return;
+  await chrome.storage.session.set({ peeks: peeks.filter((x) => x !== p) });
+  const from = await chrome.windows.get(p.from).catch(() => null);
+  await chrome.tabs.create(from ? { url, windowId: from.id } : { url });
+  if (from) await chrome.windows.update(from.id, { focused: true });
+  chrome.windows.remove(win.id).catch(() => {});
+}
+
+chrome.commands.onCommand.addListener((cmd) => ({ palette, reset, relock, space, clear, expand: () => expand() })[cmd]?.());
 
 chrome.runtime.onMessage.addListener((msg, sender, respond) => {
   const tab = sender.tab;
   if (!tab) return;
   if (msg.open) {
-    chrome.tabs.create({ url: msg.open, openerTabId: tab.id, windowId: tab.windowId });
+    peek(msg.open, tab.windowId);
+  } else if (msg.expand) {
+    expand(tab.windowId);
   } else if (msg.query) {
-    getState().then(({ locks }) => respond(locks[tab.id] ? host(locks[tab.id]) : null));
+    Promise.all([getState(), isPeek(tab.windowId), expandKey()]).then(([{ locks }, peek, key]) =>
+      respond({ lockedHost: locks[tab.id] ? host(locks[tab.id]) : null, peek, key }),
+    );
     return true;
   }
 });

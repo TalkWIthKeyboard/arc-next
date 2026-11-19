@@ -54,6 +54,7 @@ const STEPS = [
       ${check(state.keys.palette, 'Open Command Bar', esc(state.keys.palette), 'Not set yet')}
       ${check(state.keys.space, 'Pin/Unpin Tab in Space', esc(state.keys.space), 'Not set yet')}
       ${check(state.keys.reset, 'Reset Tab', esc(state.keys.reset), 'Not set yet')}
+      ${check(state.keys.expand, 'Open Peek as a Tab', esc(state.keys.expand), 'Optional, ⌘O')}
       <p class="note">Click the pencil next to each command, then press the keys.</p>`,
   },
 
@@ -115,7 +116,7 @@ const STEPS = [
         state.pinned
           ? `<p>Now try it in a pinned tab:</p>
         <ol><li>Click around, then press ${key('reset', '⌃R')} to go back to the pinned page.</li>
-        <li>Press <kbd>⌘W</kbd>. It resets instead of closing.</li><li>Click a link to another site. It opens in a new tab.</li></ol>`
+        <li>Press <kbd>⌘W</kbd>. It resets instead of closing.</li><li>Click a link to another site. It opens in a floating window; click back to dismiss it.</li></ol>`
           : '<p class="note">Open any site in another tab and pin it.</p>'
       }`,
   },

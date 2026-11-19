@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "arc-next",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Bring a bit of Arc back to Chrome, built on what Chrome already has.",
   "permissions": ["tabs", "tabGroups", "storage", "sessions", "alarms", "bookmarks", "history", "favicon", "search", "scripting"],
   "background": {
@@ -54,6 +54,13 @@
     },
     "clear": {
       "description": "Clear Today"
+    },
+    "expand": {
+      "suggested_key": {
+        "default": "Ctrl+O",
+        "mac": "Command+O"
+      },
+      "description": "Open Peek as a Tab"
     }
   },
   "web_accessible_resources": [

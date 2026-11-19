@@ -86,6 +86,7 @@ All the commands are listed below. The last three can stay as they are, or be se
 | Open Command Bar              | ⌘T                  | Opens the search overlay                                       |
 | Pin/Unpin Tab in Space        | ⌘D                  | Adds the current page to the Space; press again to take it out |
 | Reset Tab                     | ⌃R (set by default) | Resets the current tab                                         |
+| Open Peek as a Tab            | ⌘O                  | Keeps the page in a peek window as a normal tab                |
 | Clear Today                   | Your choice         | Cleans up the current window right now                         |
 | Replace Pin with Current Page | Your choice         | Makes the current page this tab's new pinned URL               |
 
@@ -118,7 +119,7 @@ Imported tabs load once so they get a title and an icon, then go to sleep until 
 1. Open a site you visit every day.
 2. Right-click its tab in the sidebar and choose **Pin**. The tab shrinks to an icon and moves to the top of the sidebar.
 3. Click around in the page until you are somewhere else, then press ⌃R. It returns to the URL it had when you pinned it.
-4. Click a link to another site. The new page opens in a new tab and the pinned page stays where it is.
+4. Click a link to another site. It opens in a floating window over the pinned page, like Arc's Peek. Click back on the main window and it goes away; press ⌘O in it to keep it as a normal tab.
 5. Press ⌘W. The tab is not closed; it returns to its pinned URL.
 
 To really remove it, right-click the tab and choose **Unpin**.
