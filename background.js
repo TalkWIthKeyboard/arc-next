@@ -362,6 +362,10 @@ const boot = () => {
 };
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   boot();
+  // An update or reload leaves open pages with a dead content.js: give locked tabs a fresh one so their links
+  // still open in a peek without the user reloading each page.
+  const { locks } = await getState();
+  for (const id of Object.keys(locks)) chrome.scripting.executeScript({ target: { tabId: Number(id) }, files: ['content.js'] }).catch(() => {});
   // First-run walkthrough, shown once. The flag guards against "install" firing again for the same profile.
   if (reason !== 'install' || (await chrome.storage.local.get('welcomed')).welcomed) return;
   await chrome.storage.local.set({ welcomed: true });
