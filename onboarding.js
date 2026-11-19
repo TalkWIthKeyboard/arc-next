@@ -39,7 +39,8 @@ const STEPS = [
           ),
     body: () => `<h1>Move your tabs to the side</h1>
       <p>Chrome's own vertical tabs are your sidebar.</p>
-      <ol><li>Right-click the tab strip at the top of the window.</li><li>Choose <b>Show Tabs Vertically</b>.</li></ol>`,
+      <ol><li>Right-click the tab strip at the top of the window.</li><li>Choose <b>Show Tabs Vertically</b>.</li></ol>
+      <p class="note">For Arc's <kbd>⌘S</kbd>: in System Settings → Keyboard → Keyboard Shortcuts → App Shortcuts, give Chrome's <b>Collapse Tabs</b> and <b>Expand Tabs</b> both <kbd>⌘S</kbd>.</p>`,
   },
 
   {

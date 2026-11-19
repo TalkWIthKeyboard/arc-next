@@ -44,6 +44,8 @@ Two related actions live in the same right-click menu:
 - **Collapse Tabs** shrinks the column to a narrow strip of icons. **Expand Tabs** brings it back.
 - **Show Tabs Horizontally** returns the tabs to the top.
 
+For Arc's ⌘S toggle: in macOS **System Settings → Keyboard → Keyboard Shortcuts → App Shortcuts**, add **Collapse Tabs** and **Expand Tabs** for Google Chrome, both ⌘S, named exactly as Chrome's menu shows them. This takes ⌘S away from Save Page As.
+
 ### 2. Install the extension
 
 1. Download `arc-next.zip` from the [latest release](https://github.com/TalkWIthKeyboard/arc-next/releases/latest) and unzip it. You get a folder named `arc-next`; remember where it is. If you use git, you can clone instead:
