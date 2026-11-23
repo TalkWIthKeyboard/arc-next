@@ -1,3 +1,4 @@
+import { ready, t } from './i18n.js';
 import { assign, claim, host, idle, MARK, stale } from './lib.js';
 
 const isWeb = (url) => /^https?:/.test(url || '');
@@ -251,7 +252,6 @@ async function space() {
 // Cleanup, like Arc's auto-archive. Idle Today tabs (not pinned, not in any group) are closed; they stay in
 // Chrome's history, so ⌘⇧T or the ⌘T overlay brings them back. Idle guarded tabs (pinned, or in a managed
 // group) are not closed: they go back to their locked URL.
-const ARCHIVE_AFTER_HOURS = 12; // Arc's default; 0 turns automatic cleanup off
 
 async function sweep(maxAge, windowId) {
   const tabs = await chrome.tabs.query(windowId == null ? {} : { windowId });
@@ -270,8 +270,11 @@ async function sweep(maxAge, windowId) {
   await chrome.storage.session.set({ resets });
 }
 
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'today' && ARCHIVE_AFTER_HOURS > 0) sweep(ARCHIVE_AFTER_HOURS * 36e5);
+// Hours a Today tab may sit unused, set in the popup: 12 is Arc's default, 0 turns automatic cleanup off.
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name !== 'today') return;
+  const { archiveHours } = await chrome.storage.local.get({ archiveHours: 12 });
+  if (archiveHours > 0) sweep(archiveHours * 36e5);
 });
 
 // Like Arc's Clear button: close every Today tab in this window except the one being viewed, and send the
@@ -307,7 +310,8 @@ async function peek(url, windowId) {
   const { peeks = [] } = await chrome.storage.session.get('peeks');
   await chrome.storage.session.set({ peeks: [...peeks, { id, from: windowId }] });
   // The page may have asked "am I a peek?" before the id was saved above: tell it again now.
-  chrome.tabs.sendMessage(tabs[0].id, { peek: true, key: await expandKey() }).catch(() => {});
+  await ready;
+  chrome.tabs.sendMessage(tabs[0].id, { peek: true, key: await expandKey(), label: t('openAsTab') }).catch(() => {});
 }
 const isPeek = async (windowId) => (await chrome.storage.session.get('peeks')).peeks?.some((p) => p.id === windowId) ?? false;
 // The key the user actually set for "Open Peek as a Tab" ('' when none), shown on the page's bar.
@@ -348,8 +352,8 @@ chrome.runtime.onMessage.addListener((msg, sender, respond) => {
   } else if (msg.expand) {
     expand(tab.windowId);
   } else if (msg.query) {
-    Promise.all([getState(), isPeek(tab.windowId), expandKey()]).then(([{ locks }, peek, key]) =>
-      respond({ lockedHost: locks[tab.id] ? host(locks[tab.id]) : null, peek, key }),
+    Promise.all([getState(), isPeek(tab.windowId), expandKey(), ready]).then(([{ locks }, peek, key]) =>
+      respond({ lockedHost: locks[tab.id] ? host(locks[tab.id]) : null, peek, key, label: t('openAsTab') }),
     );
     return true;
   }

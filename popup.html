@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>arc-next</title>
+<style>
+  /* The look of the store screenshots and promo video: paper with a dot grid, a serif name, white cards, blue links.
+     Dark mode swaps the tokens only. */
+  @font-face { font-family: "Instrument Serif"; src: url(fonts/InstrumentSerif.woff2) format("woff2"); }
+  :root { --paper: #fbf8f1; --dots: #d6cfbd; --line: #e3dccb; --ink: #17182a; --dim: #5a5d6b; --blue: #1f66ff; --card: rgb(255 255 255 / .85);
+    --hover: #174fc4; --lift: 0 1px 0 rgb(0 0 0 / .03), 0 4px 14px rgb(30 30 60 / .08); color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #1c1d23; --dots: #34363f; --line: #3a3c47; --ink: #ecebe6; --dim: #a3a5b3; --blue: #7aa5ff; --card: #272932;
+      --hover: #a8c4ff; --lift: 0 1px 0 rgb(255 255 255 / .04), 0 4px 14px rgb(0 0 0 / .35); }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; width: 300px; padding: 16px 12px 8px; display: flex; flex-direction: column; gap: 10px;
+    background: var(--paper) radial-gradient(var(--dots) 1px, transparent 1.2px) 0 0 / 16px 16px; color: var(--ink);
+    font: 400 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+  h1 { margin: 0 6px 4px; font: 400 38px/1 "Instrument Serif", Georgia, serif; }
+  .card { background: var(--card); border-radius: 12px; box-shadow: var(--lift); }
+  .row { display: flex; align-items: center; gap: 10px; padding: 0 14px; min-height: 44px; }
+  .row svg { width: 16px; height: 16px; flex: none; color: var(--blue); }
+  .row label { flex: none; }
+  /* The language menu is a native select drawn as the row's right side. */
+  select { all: unset; flex: 1; min-width: 0; text-align: right; color: var(--dim); cursor: pointer; padding-right: 16px;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="%238a8c99" stroke-width="1.8"><path d="M6 3l5 5-5 5"/></svg>') right center / 12px no-repeat; }
+  .cleanup { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .cleanup .row { padding: 0; min-height: 0; }
+  #when { margin-left: auto; font-weight: 600; color: var(--blue); }
+  input[type="range"] { width: 100%; margin: 4px 0 0; accent-color: var(--blue); cursor: pointer; }
+  .ticks { display: flex; justify-content: space-between; font-size: 11px; color: var(--dim); }
+  nav { display: flex; flex-direction: column; margin-top: 4px; padding: 0 6px; }
+  nav button { all: unset; cursor: pointer; display: flex; align-items: center; min-height: 40px; color: var(--blue); font-weight: 600; }
+  nav button + button { border-top: 1px dashed var(--line); }
+  nav button::after { content: "→"; margin-left: auto; }
+  nav button:hover { color: var(--hover); }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>arc-next</h1>
+<div class="card row">
+  <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c2 2 2.8 4.2 2.8 6.5S10 12.5 8 14.5M8 1.5C6 3.5 5.2 5.7 5.2 8S6 12.5 8 14.5"/></svg>
+  <label for="lang" id="l-lang">Language</label>
+  <select id="lang"></select>
+</div>
+<div class="card cleanup">
+  <div class="row">
+    <svg aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 4.5h11M6 4.5V3h4v1.5M4 4.5l.7 9h6.6l.7-9"/></svg>
+    <label for="hours" id="l-cleanup">Archive Today tabs</label>
+    <span id="when"></span>
+  </div>
+  <input type="range" id="hours" min="0" max="4" step="1">
+  <div class="ticks" aria-hidden="true"><span>Off</span><span>12h</span><span>1d</span><span>3d</span><span>7d</span></div>
+</div>
+<nav>
+  <button type="button" id="shortcuts"></button>
+  <button type="button" id="import"></button>
+  <button type="button" id="guide"></button>
+</nav>
+<script type="module" src="popup.js"></script>
+</body>
+</html>

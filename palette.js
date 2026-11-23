@@ -1,5 +1,6 @@
 // ⌘T overlay, shown as a full-viewport iframe inside the current page. Candidates come from open tabs,
 // bookmarks and history; ranking is the port of Chromium's address bar scoring in lib.js.
+import { ready, t } from './i18n.js';
 import * as R from './lib.js';
 
 const input = document.getElementById('q');
@@ -39,6 +40,9 @@ async function load() {
   return [...byUrl.values()];
 }
 
+await ready;
+input.placeholder = t('placeholder');
+for (const el of document.querySelectorAll('[data-t]')) el.textContent = t(el.dataset.t);
 const cands = await load();
 const { shortcuts = {} } = await chrome.storage.local.get('shortcuts'); // { typed text: { url, title, hits, last } }
 const visitCache = new Map();
@@ -51,7 +55,15 @@ const visitsOf = (url) =>
     )
     .get(url);
 
-const row = (c, score) => ({ kind: c.tab ? 'tab' : 'page', title: c.title || c.url, url: c.url, sub: c.tab ? '' : pretty(c.url), tab: c.tab, score });
+const row = (c, score) => ({
+  kind: c.tab ? 'tab' : 'page',
+  title: c.title || c.url,
+  url: c.url,
+  sub: c.tab ? '' : pretty(c.url),
+  tag: c.folder ? t('bookmark') : '',
+  tab: c.tab,
+  score,
+});
 
 async function compute(q) {
   const now = Date.now();
@@ -95,8 +107,8 @@ async function compute(q) {
   }
   const url = R.asUrl(q);
   const rows = [...scored.values()];
-  if (url && !scored.has(url)) rows.push({ kind: 'url', title: pretty(url), url, sub: 'Open', score: R.URL_WHAT_YOU_TYPED });
-  rows.push({ kind: 'search', title: q, sub: 'Search', score: url ? R.SEARCH_FOR_URL_INPUT : R.SEARCH_WHAT_YOU_TYPED });
+  if (url && !scored.has(url)) rows.push({ kind: 'url', title: pretty(url), url, tag: t('open'), score: R.URL_WHAT_YOU_TYPED });
+  rows.push({ kind: 'search', title: q, tag: t('search'), score: url ? R.SEARCH_FOR_URL_INPUT : R.SEARCH_WHAT_YOU_TYPED });
   return rows.sort((a, b) => b.score - a.score).slice(0, 8);
 }
 
@@ -120,15 +132,11 @@ async function refresh() {
       else ico.append(Object.assign(document.createElement('img'), { src: `/_favicon/?pageUrl=${encodeURIComponent(r.url)}&size=32` }));
       const txt = document.createElement('span');
       txt.className = 'txt';
-      txt.textContent = r.title;
-      if (r.sub) txt.append(Object.assign(document.createElement('span'), { className: r.url && r.kind !== 'url' ? 'sub' : 'sub plain', textContent: r.sub }));
+      txt.append(Object.assign(document.createElement('span'), { className: 'title', textContent: r.title }));
+      if (r.sub) txt.append(Object.assign(document.createElement('span'), { className: 'sub', textContent: r.sub }));
       li.append(ico, txt);
-      if (r.tab) {
-        const act = document.createElement('span');
-        act.className = 'act';
-        act.append('Switch to Tab', icon('i-arrow'));
-        li.append(act);
-      }
+      if (r.tab) li.append(Object.assign(document.createElement('span'), { className: 'act', textContent: `${t('switchToTab')} →` }));
+      else if (r.tag) li.append(Object.assign(document.createElement('span'), { className: 'tag', textContent: r.tag }));
       li.onmousemove = () => {
         if (sel !== i) {
           sel = i;

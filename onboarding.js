@@ -1,5 +1,6 @@
 // First-run walkthrough. Each step asks for one real action; the page watches the browser and ticks the step
 // off by itself wherever an extension is able to know (shortcuts, pinned tabs, the 🧲 group, the overlay).
+import { ready, t } from './i18n.js';
 import { MARK, parseArc } from './lib.js';
 
 const app = document.getElementById('app');
@@ -17,15 +18,15 @@ const check = (done, label, yes, no) => `<div class="check${done ? ' done' : ''}
 
 const STEPS = [
   {
-    next: 'Get started',
+    next: () => t('getStarted'),
     art: () => hero,
-    body: () => `<h1>Welcome to arc-next</h1>
-      <p>It brings some of the Arc experience back to Chrome.</p>
-      <p class="note">Setup takes about two minutes.</p>`,
+    body: () => `<h1>${t('welcomeH')}</h1>
+      <p>${t('welcomeP')}</p>
+      <p class="note">${t('welcomeNote')}</p>`,
   },
 
   {
-    next: 'Done',
+    next: 'done',
     skip: true,
     onNext: () => {
       state.sidebar = true;
@@ -37,30 +38,30 @@ const STEPS = [
             `<div class="tabs-top">${tab('')}${tab('')}${tab('')}</div>${page('<div class="menu"><span>New Tab</span><span class="hot">Show Tabs Vertically</span><span>Bookmark All Tabs…</span></div>')}`,
             'top-tabs',
           ),
-    body: () => `<h1>Move your tabs to the side</h1>
-      <p>Chrome's own vertical tabs are your sidebar.</p>
-      <ol><li>Right-click the tab strip at the top of the window.</li><li>Choose <b>Show Tabs Vertically</b>.</li></ol>
-      <p class="note">For Arc's <kbd>⌘S</kbd>: in System Settings → Keyboard → Keyboard Shortcuts → App Shortcuts, give Chrome's <b>Collapse Tabs</b> and <b>Expand Tabs</b> both <kbd>⌘S</kbd>.</p>`,
+    body: () => `<h1>${t('sideH')}</h1>
+      <p>${t('sideP')}</p>
+      <ol>${t('sideOl')}</ol>
+      <p class="note">${t('sideNote')}</p>`,
   },
 
   {
-    next: 'Continue',
+    next: 'continue',
     skip: true,
     done: () => !!(state.keys.palette && state.keys.space),
-    extra: '<button class="link" type="button" id="shortcuts">Open shortcut settings ↗</button>',
+    extra: () => `<button class="link" type="button" id="shortcuts">${t('keysExtra')}</button>`,
     art: () => win(rail(tab('Hacker News') + tab('Docs') + tab('Mail')) + page()),
-    body: () => `<h1>Set two shortcuts</h1>
-      <p>Chrome does not let an extension claim these keys by itself, so you set them once. We suggest <kbd>⌘T</kbd> and <kbd>⌘D</kbd>, the same as Arc.</p>
-      ${check(state.keys.palette, 'Open Command Bar', esc(state.keys.palette), 'Not set yet')}
-      ${check(state.keys.space, 'Pin/Unpin Tab in Space', esc(state.keys.space), 'Not set yet')}
-      ${check(state.keys.reset, 'Reset Tab', esc(state.keys.reset), 'Not set yet')}
-      ${check(state.keys.expand, 'Open Peek as a Tab', esc(state.keys.expand), 'Optional, ⌘O')}
-      <p class="note">Click the pencil next to each command, then press the keys.</p>`,
+    body: () => `<h1>${t('keysH')}</h1>
+      <p>${t('keysP')}</p>
+      ${check(state.keys.palette, 'Open Command Bar', esc(state.keys.palette), t('notSet'))}
+      ${check(state.keys.space, 'Pin/Unpin Tab in Space', esc(state.keys.space), t('notSet'))}
+      ${check(state.keys.reset, 'Reset Tab', esc(state.keys.reset), t('notSet'))}
+      ${check(state.keys.expand, 'Open Peek as a Tab', esc(state.keys.expand), t('optional', '⌘O'))}
+      <p class="note">${t('keysNote')}</p>`,
   },
 
   {
     drop: true,
-    next: () => (state.imported ? 'Continue' : 'Import'),
+    next: () => t(state.imported ? 'continue' : 'import'),
     skip: () => !state.imported,
     done: () => !!state.imported || jobs().length > 0,
     onNext: async () => {
@@ -70,7 +71,7 @@ const STEPS = [
     },
     art: () => {
       if (!state.arc)
-        return `<label class="drop"><input type="file" id="file" accept=".json,.md" hidden><b>Drop the file here</b><span>or click to choose it</span>${
+        return `<label class="drop"><input type="file" id="file" accept=".json,.md" hidden><b>${t('drop')}</b><span>${t('dropOr')}</span>${
           state.err ? `<span class="err">${esc(state.err)}</span>` : ''
         }</label>`;
       const off = state.imported ? 'disabled' : '';
@@ -79,50 +80,43 @@ const STEPS = [
           (sp, i) => `<label class="sp"><input type="checkbox" data-space="${i}" ${state.pick[i] ? 'checked' : ''} ${off}>${esc(sp.title)}</label>
           ${sp.sections
             .map(
-              (sec, j) => `<div class="sec${state.pick[i] ? '' : ' off'}"><span>${esc(sec.path.join('/') || LABEL[sec.kind])}</span><i>${sec.urls.length}</i>
-              <select data-sec="${i}:${j}" aria-label="Where it goes" ${state.pick[i] ? off : 'disabled'}>${Object.entries(DEST)
-                .map(([v, label]) => `<option value="${v}" ${dest(i, j) === v ? 'selected' : ''}>${label}</option>`)
+              (sec, j) => `<div class="sec${state.pick[i] ? '' : ' off'}"><span>${esc(sec.path.join('/') || t(sec.kind))}</span><i>${sec.urls.length}</i>
+              <select data-sec="${i}:${j}" aria-label="${t('whereTo')}" ${state.pick[i] ? off : 'disabled'}>${Object.entries(DEST)
+                .map(([v, label]) => `<option value="${v}" ${dest(i, j) === v ? 'selected' : ''}>${label()}</option>`)
                 .join('')}</select></div>`,
             )
             .join('')}`,
         )
         .join('')}</div>`;
     },
-    body: () => `<h1>Bring your Arc sidebar over</h1>
-      <p>Favorites become pinned tabs. Spaces and folders become ${MARK} groups.</p>
+    body: () => `<h1>${t('arcH')}</h1>
+      <p>${t('arcP', MARK)}</p>
       ${
         state.imported
-          ? check(true, 'Your Arc pages are in the sidebar', `${state.imported.tabs} tabs`, '')
+          ? check(true, t('arcDone'), t('tabs', state.imported.tabs), '')
           : state.arc
-            ? `<p>Tick the Spaces that belong in this Chrome profile, then choose where each part goes. Nothing changes until you press Import.</p>
-              ${state.arc.md ? '<p class="note">In this file, Favorites also includes pinned and Today tabs that were not in a folder. Arc exports them together.</p>' : ''}
-              ${state.arc.skipped ? `<p class="note">${state.arc.skipped === 1 ? '1 link that is not a web page was' : `${state.arc.skipped} links that are not web pages were`} left out.</p>` : ''}
-              <button class="link" type="button" id="refile">Choose another file</button>`
-            : `<ol><li>Click the box, then press <kbd>⌘⇧G</kbd> in the file picker.</li>
-              <li>Paste this path and press Enter: <button class="link" type="button" id="copy">Copy path</button><br><code>${ARC_FILE}</code></li></ol>
-              <p class="note">On Windows, or if that file is gone: in Arc, open Settings → Advanced → Export Data, and drop <b>Arc Data Export.md</b> here instead.</p>`
+            ? `<p>${t('arcTick')}</p>
+              ${state.arc.md ? `<p class="note">${t('arcMd')}</p>` : ''}
+              ${state.arc.skipped ? `<p class="note">${t('arcSkipped', state.arc.skipped)}</p>` : ''}
+              <button class="link" type="button" id="refile">${t('refile')}</button>`
+            : `<ol>${t('arcOl', `<button class="link" type="button" id="copy">${t('copyPath')}</button>`, ARC_FILE)}</ol>
+              <p class="note">${t('arcWin')}</p>`
       }`,
   },
 
   {
-    next: 'Continue',
+    next: 'continue',
     skip: true,
     done: () => state.pinned,
     art: () => win(rail(pins(state.pinned, state.pinned) + (state.pinned ? '' : tab('Hacker News', true)) + tab('Docs') + tab('Mail')) + page()),
-    body: () => `<h1>Pin a page you open every day</h1>
-      <p>Pinned pages are your Favorites. arc-next keeps them where you left them.</p>
-      ${check(state.pinned, 'Right-click a tab and choose <b>&nbsp;Pin</b>', 'Pinned', 'Waiting…')}
-      ${
-        state.pinned
-          ? `<p>Now try it in a pinned tab:</p>
-        <ol><li>Click around, then press ${key('reset', '⌃R')} to go back to the pinned page.</li>
-        <li>Press <kbd>⌘W</kbd>. It resets instead of closing.</li><li>Click a link to another site. It opens in a floating window; click back to dismiss it.</li></ol>`
-          : '<p class="note">Open any site in another tab and pin it.</p>'
-      }`,
+    body: () => `<h1>${t('pinH')}</h1>
+      <p>${t('pinP')}</p>
+      ${check(state.pinned, t('pinCheck'), t('pinDone'), t('waiting'))}
+      ${state.pinned ? `<p>${t('pinTry')}</p><ol>${t('pinOl', key('reset', '⌃R'))}</ol>` : `<p class="note">${t('pinNote')}</p>`}`,
   },
 
   {
-    next: 'Continue',
+    next: 'continue',
     skip: true,
     done: () => state.space,
     art: () =>
@@ -132,18 +126,14 @@ const STEPS = [
             (state.space ? `<div class="grp hot">${MARK} Space</div><div class="indent">${tab('Docs')}</div>${tab('Mail')}` : tab('Docs', true) + tab('Mail')),
         ) + page(),
       ),
-    body: () => `<h1>Create your first Space</h1>
-      <p>A Space holds the pages for one project. They stay put like Favorites, and everything else is Today.</p>
-      ${check(state.space, `Go to any page and press ${key('space', '⌘D')}`, 'Space created', 'Waiting…')}
-      ${
-        state.space
-          ? `<p class="note">Press ${key('space', '⌘D')} on other pages to add them, or drag tabs in. Press it again to take a page out. Rename the group freely, just keep the ${MARK}.</p>`
-          : `<p class="note">A group named ${MARK} Space will appear at the top of your sidebar.</p>`
-      }`,
+    body: () => `<h1>${t('spaceH')}</h1>
+      <p>${t('spaceP')}</p>
+      ${check(state.space, t('spaceCheck', key('space', '⌘D')), t('spaceDone'), t('waiting'))}
+      <p class="note">${state.space ? t('spaceMore', key('space', '⌘D'), MARK) : t('spaceNote', MARK)}</p>`,
   },
 
   {
-    next: 'Continue',
+    next: 'continue',
     skip: true,
     done: () => state.search,
     art: () =>
@@ -155,36 +145,36 @@ const STEPS = [
               : '',
           ),
       ),
-    body: () => `<h1>Find anything with the Command Bar</h1>
-      <p>Open tabs, bookmarks and history in one place, ranked the way Chrome's address bar ranks them.</p>
-      ${check(state.search, `Press ${key('palette', '⌘T')} right now`, 'Opened', 'Waiting…')}
-      <p class="note">Type a few letters and press Enter. <kbd>↑</kbd> <kbd>↓</kbd> to choose, <kbd>Esc</kbd> to close.</p>`,
+    body: () => `<h1>${t('searchH')}</h1>
+      <p>${t('searchP')}</p>
+      ${check(state.search, t('searchCheck', key('palette', '⌘T')), t('searchDone'), t('waiting'))}
+      <p class="note">${t('searchNote')}</p>`,
   },
 
   {
-    next: 'Done',
+    next: 'done',
     skip: true,
-    extra: '<button class="link" type="button" id="pip">Open the setting ↗</button>',
+    extra: () => `<button class="link" type="button" id="pip">${t('pipExtra')}</button>`,
     art: () =>
       win(
         rail(`${pins(true)}<div class="grp">${MARK} Space</div><div class="indent">${tab('Docs')}</div>${tab('Video', true)}`) +
           page('<div class="mini"></div>'),
       ),
-    body: () => `<h1>Keep videos in a mini player</h1>
-      <p>Chrome can move a playing video into a small window when you switch tabs, and put it back when you return. It is off until you allow it.</p>
-      <ol><li>Open the setting.</li><li>Choose <b>Sites can enter picture-in-picture automatically</b>.</li></ol>`,
+    body: () => `<h1>${t('pipH')}</h1>
+      <p>${t('pipP')}</p>
+      <ol>${t('pipOl')}</ol>`,
   },
 
   {
-    next: 'Start browsing',
+    next: () => t('startBrowsing'),
     art: () => hero,
     onNext: async () => {
       const t = await chrome.tabs.getCurrent();
       if (t) chrome.tabs.remove(t.id);
     },
-    body: () => `<h1>You're all set</h1>
-      <p>${key('palette', '⌘T')} find &nbsp; ${key('space', '⌘D')} add to Space &nbsp; ${key('reset', '⌃R')} reset &nbsp; <kbd>⌘W</kbd> resets pinned pages</p>
-      <div class="warn">Today tabs left unused for 12 hours are closed automatically. <kbd>⌘⇧T</kbd> brings them back.</div>`,
+    body: () => `<h1>${t('endH')}</h1>
+      <p>${t('endKeys', key('palette', '⌘T'), key('space', '⌘D'), key('reset', '⌃R'))}</p>
+      ${state.hours ? `<div class="warn">${t('endWarn', t('forH', state.hours))}</div>` : ''}`,
   },
 ];
 
@@ -195,8 +185,7 @@ function key(name, suggested) {
 
 // ── Arc import ──
 const ARC_FILE = '~/Library/Application Support/Arc/StorableSidebar.json';
-const LABEL = { favorites: 'Favorites', pinned: 'Pinned', today: 'Today' };
-const DEST = { pin: 'Pinned tabs', group: `${MARK} group`, skip: 'Skip' };
+const DEST = { pin: () => t('pinnedTabs'), group: () => t('group', MARK), skip: () => t('skip') };
 const dest = (i, j) => state.dest[`${i}:${j}`] || { favorites: 'pin', today: 'skip' }[state.arc.spaces[i].sections[j].kind] || 'group';
 
 // What Import would do right now: [{ pin, title, folder, urls }], one entry per section that is not skipped.
@@ -221,7 +210,7 @@ async function load(file) {
     state.dest = {};
     state.err = '';
   } catch {
-    state.err = 'That does not look like an Arc file.';
+    state.err = t('notArc');
   }
   render();
 }
@@ -291,14 +280,14 @@ function render() {
   const s = STEPS[state.step];
   const waiting = s.done && !s.done();
   const html = `
-    <div class="top"><img src="icons/icon128.png" alt=""><strong>arc-next</strong>
-      <div class="dots" aria-label="Step ${state.step + 1} of ${STEPS.length}">${STEPS.map((_, i) => `<i class="${i <= state.step ? 'on' : ''}"></i>`).join('')}</div></div>
+    <div class="top"><strong>arc-next</strong>
+      <div class="dots" aria-label="${t('step', state.step + 1, STEPS.length)}">${STEPS.map((_, i) => `<i class="${i <= state.step ? 'on' : ''}"></i>`).join('')}</div></div>
     <div class="stage"><div class="copy">${s.body()}</div><div>${s.art()}</div></div>
     <div class="actions">
-      ${state.step > 0 ? '<button class="ghost" type="button" id="back">Back</button>' : ''}
-      <button class="primary" type="button" id="next" ${waiting ? 'disabled' : ''}>${typeof s.next === 'function' ? s.next() : s.next}</button>
-      ${s.extra || ''}
-      ${(typeof s.skip === 'function' ? s.skip() : s.skip && (waiting || !s.done)) ? '<button class="ghost" type="button" id="skip">Skip</button>' : ''}
+      ${state.step > 0 ? `<button class="ghost" type="button" id="back">${t('back')}</button>` : ''}
+      <button class="primary" type="button" id="next" ${waiting ? 'disabled' : ''}>${typeof s.next === 'function' ? s.next() : t(s.next)}</button>
+      ${s.extra?.() || ''}
+      ${(typeof s.skip === 'function' ? s.skip() : s.skip && (waiting || !s.done)) ? `<button class="ghost" type="button" id="skip">${t('skip')}</button>` : ''}
     </div>`;
   if (html === last) return; // nothing changed: keep focus and avoid flicker while polling
   last = html;
@@ -346,5 +335,13 @@ chrome.runtime.onMessage.addListener((msg) => {
 });
 setInterval(detect, 1000); // shortcut changes fire no event, so poll; pins and groups ride along
 
+chrome.storage.onChanged.addListener((c) => {
+  if (c.archiveHours) state.hours = c.archiveHours.newValue;
+  if (c.lang || c.archiveHours) render(); // i18n.js registered its listener first, so the language is already switched
+});
+// The popup's "Import from Arc" opens this page at the import step.
+if (location.hash === '#import') state.step = STEPS.findIndex((s) => s.drop);
+state.hours = (await chrome.storage.local.get({ archiveHours: 12 })).archiveHours;
+await ready;
 render();
 detect();

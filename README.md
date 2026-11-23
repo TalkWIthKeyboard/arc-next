@@ -158,7 +158,7 @@ Type a few letters:
 
 ## Good to know
 
-- **Today tabs left idle for more than 12 hours are closed automatically**, while pinned pages and pages in a Space are reset instead. Closed pages stay in your history, so ⌘⇧T or a ⌘T search brings them back. To turn automatic cleanup off, set `ARCHIVE_AFTER_HOURS` in `background.js` to 0.
+- **Today tabs left idle for more than 12 hours are closed automatically**, while pinned pages and pages in a Space are reset instead. Closed pages stay in your history, so ⌘⇧T or a ⌘T search brings them back. To change the time or turn it off, click the arc-next icon in the toolbar.
 - **The search overlay does not appear on the new tab page or on `chrome://` pages.** Chrome does not allow extensions to show content there, so ⌘T opens a native new tab instead.
 - **For Arc's mini player, turn on Chrome's own.** Open `chrome://settings/content/autoPictureInPicture` and choose **Sites can enter picture-in-picture automatically**. A video that is playing with sound then moves into a small window when you switch tabs and goes back when you return. Chrome keeps one mini player at a time, only on `https` pages, and decides where the window sits.
 - **⌘D is Chrome's "Bookmark this tab" by default.** Once it belongs to arc-next, use the star in the address bar to add bookmarks.

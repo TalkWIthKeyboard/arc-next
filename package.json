@@ -4,7 +4,7 @@
   "scripts": {
     "check": "biome check --write",
     "prepare": "git config core.hooksPath .githooks",
-    "zip": "rm -f arc-next.zip && zip -r arc-next.zip manifest.json *.js *.html icons LICENSE"
+    "zip": "rm -f arc-next.zip && zip -r arc-next.zip manifest.json *.js *.html icons fonts LICENSE"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.7"

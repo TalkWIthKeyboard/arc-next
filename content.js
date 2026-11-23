@@ -8,7 +8,7 @@
   chrome.runtime.sendMessage({ query: true }, (r) => {
     void chrome.runtime.lastError;
     if (!told) lockedHost = r?.lockedHost || null; // the reply can arrive after a "just pinned" notice; do not overwrite it with a stale value
-    if (r?.peek) peekBar(r.key);
+    if (r?.peek) peekBar(r.key, r.label);
   });
   chrome.runtime.onMessage.addListener((msg, _, respond) => {
     if ('lockedHost' in msg) {
@@ -19,12 +19,12 @@
       togglePalette();
       respond(true);
     }
-    if (msg.peek) peekBar(msg.key);
+    if (msg.peek) peekBar(msg.key, msg.label);
   });
 
   // In a peek window: Arc's "Open as Tab" bar at the bottom. A closed shadow root keeps the page's CSS out.
   let bar = null;
-  function peekBar(key) {
+  function peekBar(key, label) {
     if (bar) return;
     bar = document.createElement('arc-next-peek');
     bar.style.cssText =
@@ -40,7 +40,8 @@
       button:focus-visible { outline: 2px solid #8cabe4; outline-offset: 2px; }
       kbd { font: inherit; opacity: .6; margin-left: 2px; }
       svg { width: 14px; height: 14px; }
-    </style><button type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M9 3h4v4M13 3L8 8M7 4H4a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V9"/></svg>Open as Tab</button>`;
+    </style><button type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M9 3h4v4M13 3L8 8M7 4H4a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V9"/></svg></button>`;
+    root.querySelector('button').append(label);
     if (key) root.querySelector('button').append(Object.assign(document.createElement('kbd'), { textContent: key }));
     root.querySelector('button').addEventListener('click', () => chrome.runtime.sendMessage({ expand: true }));
     document.documentElement.append(bar);

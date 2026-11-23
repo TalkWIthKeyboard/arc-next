@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "arc-next",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Bring a bit of Arc back to Chrome, built on what Chrome already has.",
   "permissions": ["tabs", "tabGroups", "storage", "sessions", "alarms", "bookmarks", "history", "favicon", "search", "scripting"],
   "background": {
@@ -23,6 +23,7 @@
   ],
   "action": {
     "default_title": "arc-next",
+    "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "24": "icons/icon24.png",

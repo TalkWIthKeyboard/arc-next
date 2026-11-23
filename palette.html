@@ -1,71 +1,59 @@
 <!doctype html>
 <meta charset="utf-8">
-<meta name="color-scheme" content="light dark">
 <title>arc-next</title>
 <style>
-  /* Colors follow Chrome's Material theme: the whole palette is derived from one theme (seed) color.
-     An extension cannot read the browser theme, so --seed defaults to the theme color in the author's Chrome;
-     change this one value when the Chrome theme changes.
-     Which tone each role uses comes from Chromium's ui/color/sys_color_mixer.cc (in dark mode: panel =
-     Secondary 25, address bar = Secondary 15, text = Neutral 90, URL = Primary 80).
-     ponytail: tones approximate Material's HCT with oklch lightness/chroma, so colors can differ slightly from
-     Chrome's own; for a pixel-exact match, replace them with values computed by Material Color Utilities. */
-  :root { --seed: #8cabe4;
-    --base: oklch(from var(--seed) .983 .004 h); --field: oklch(from var(--seed) .955 .014 h);
-    --fg: oklch(from var(--seed) .224 .008 h); --dim: oklch(from var(--seed) .396 .008 h);
-    --accent: oklch(from var(--seed) .483 .12 h); --outline: oklch(from var(--seed) .828 .08 h);
-    --hover: oklch(from var(--seed) .224 .008 h / .06); --ring: rgb(0 0 0 / .12); }
+  /* The look of the toolbar popup and the store screenshots: paper with a dot grid, white cards, blue links.
+     The frame (content.js) and this page both say "light dark": if their color schemes differed, Chrome would
+     paint the frame opaque and hide the page behind it. */
+  @font-face { font-family: "Instrument Serif"; src: url(fonts/InstrumentSerif.woff2) format("woff2"); }
+  :root { --paper: #fbf8f1; --dots: #d6cfbd; --line: #e3dccb; --ink: #17182a; --dim: #5a5d6b; --blue: #1f66ff;
+    --card: #fff; --rim: #fff; --pick: rgb(255 255 255 / .92); --lift: 0 1px 0 rgb(0 0 0 / .03), 0 4px 14px rgb(30 30 60 / .08);
+    --drop: rgb(30 30 60 / .28); color-scheme: light dark; }
   @media (prefers-color-scheme: dark) {
-    :root { --base: oklch(from var(--seed) .354 .033 h); --field: oklch(from var(--seed) .267 .033 h);
-      --fg: oklch(from var(--seed) .914 .008 h); --dim: oklch(from var(--seed) .828 .008 h);
-      --accent: oklch(from var(--seed) .828 .08 h); --outline: oklch(from var(--seed) .569 .033 h);
-      --hover: oklch(from var(--seed) .99 .004 h / .1); --ring: rgb(255 255 255 / .1); }
+    :root { --paper: #1c1d23; --dots: #34363f; --line: #3a3c47; --ink: #ecebe6; --dim: #a3a5b3; --blue: #7aa5ff;
+      --card: #272932; --rim: #33353f; --pick: #2c2e38; --lift: 0 1px 0 rgb(255 255 255 / .04), 0 4px 14px rgb(0 0 0 / .35); --drop: rgb(0 0 0 / .6); }
   }
   * { box-sizing: border-box; }
   html { height: 100%; background: transparent; }
-  /* The panel's top edge is fixed where a full five-row panel would be centered, so it does not jump as
-     results come and go. */
-  body { margin: 0; height: 100%; padding-top: max(6vh, calc(50vh - 180px));
-    font: 400 15px/1.25 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--fg);
-    -webkit-font-smoothing: antialiased; }
-  /* Shapes come from the source of Chromium's address bar dropdown: panel radius 16; pill-shaped address bar;
-     result rows flush left with a half-round right end and a 16px right margin; a 4px indicator bar on the
-     selected row; 28px icon tile with radius 4; fully rounded buttons.
-     Chrome's own sizes are 34 (address bar) and 40 (row); they are scaled by 1.2 here. */
-  #box { width: min(720px, 92vw); max-height: min(76vh, 640px); margin: 0 auto; padding-bottom: 8px;
-    display: flex; flex-direction: column; background: var(--base); border-radius: 16px;
-    box-shadow: 0 0 0 1px var(--ring), 0 24px 64px rgb(0 0 0 / .42), 0 4px 12px rgb(0 0 0 / .2); overflow: hidden; }
-  #top { display: flex; align-items: center; gap: 12px; height: 44px; margin: 8px; padding: 0 16px; flex: none;
-    background: var(--field); border-radius: 22px; }
-  #box:has(#list:empty) { padding-bottom: 0; }
-  #top svg { width: 16px; height: 16px; flex: none; color: var(--dim); }
-  #q { all: unset; flex: 1; min-width: 0; font-size: 17px; caret-color: var(--accent); }
+  /* The panel's top edge is fixed where a full panel would be centered, so it does not jump as results come and go. */
+  body { margin: 0; height: 100%; padding-top: max(6vh, calc(50vh - 220px));
+    font: 400 14px/1.3 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  #box { width: min(680px, 92vw); max-height: min(76vh, 640px); margin: 0 auto; padding: 10px; display: flex; flex-direction: column; gap: 8px;
+    background: var(--paper) radial-gradient(var(--dots) 1px, transparent 1.2px) 0 0 / 16px 16px;
+    border: 4px solid var(--rim); border-radius: 18px; box-shadow: 0 3px 0 rgb(0 0 0 / .04), 0 24px 60px var(--drop); overflow: hidden; }
+  #top { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 14px; flex: none; background: var(--card); border-radius: 12px; box-shadow: var(--lift); }
+  #top svg { width: 18px; height: 18px; flex: none; color: var(--blue); }
+  #q { all: unset; flex: 1; min-width: 0; font-size: 17px; caret-color: var(--blue); }
   #q::placeholder { color: var(--dim); }
-  #list { margin: 0; padding: 0; list-style: none; overflow-y: auto; }
-  #list:empty { display: none; }
-  li { position: relative; display: flex; align-items: center; gap: 12px; height: 48px; margin-right: 16px;
-    padding: 0 10px 0 16px; border-radius: 0 24px 24px 0; cursor: default; flex: none; }
-  .ico { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 4px;
-    background: var(--field); color: var(--dim); }
+  #list { margin: 0; padding: 0; list-style: none; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+  #list:empty, #list:empty + footer { display: none; }
+  li { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 12px; border-radius: 10px; cursor: default; flex: none; }
+  li[aria-selected="true"] { background: var(--pick); box-shadow: var(--lift); }
+  .ico { width: 22px; height: 22px; flex: none; display: grid; place-items: center; }
   .ico img, .ico svg { width: 16px; height: 16px; }
-  .txt { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .sub { color: var(--accent); }
-  .sub::before { content: " - "; color: var(--dim); }
-  .sub.plain { color: var(--dim); }
-  .act { flex: none; display: flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px 0 12px;
-    border: 1px solid var(--outline); border-radius: 14px; color: var(--accent); font-size: 13px; font-weight: 500; }
-  .act svg { width: 14px; height: 14px; }
-  li[aria-selected="true"] { background: var(--hover); }
-  li[aria-selected="true"]::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
-    background: var(--accent); border-radius: 0 4px 4px 0; }
+  .ico svg { color: var(--blue); }
+  .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .title, .sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  li[aria-selected="true"] .title { font-weight: 600; }
+  .sub { font-size: 12px; color: var(--dim); }
+  .act { flex: none; color: var(--blue); font-weight: 600; white-space: nowrap; }
+  .tag { flex: none; font-size: 12px; color: var(--dim); }
+  footer { display: flex; align-items: center; gap: 14px; padding: 6px 10px 0; border-top: 1px dashed var(--line); font-size: 12px; color: var(--dim); flex: none; }
+  kbd { font: 600 11px/1 system-ui, sans-serif; padding: 3px 5px; border-radius: 4px; background: var(--paper); border: 1px solid var(--line); color: var(--ink); }
+  footer b { margin-left: auto; font: 400 16px/1 "Instrument Serif", Georgia, serif; color: var(--ink); }
 </style>
 <div id="box">
   <div id="top">
-    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
     <input id="q" autocomplete="off" spellcheck="false" placeholder="Search or Enter URL..." aria-controls="list">
   </div>
   <ul id="list" role="listbox"></ul>
+  <footer aria-hidden="true">
+    <span><kbd>↑</kbd> <kbd>↓</kbd> <span data-t="kChoose"></span></span>
+    <span><kbd>↵</kbd> <span data-t="kOpen"></span></span>
+    <span><kbd>esc</kbd> <span data-t="kClose"></span></span>
+    <b>arc-next</b>
+  </footer>
 </div>
-<template id="i-search"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></template>
-<template id="i-arrow"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></template>
+<template id="i-search"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></template>
 <script type="module" src="palette.js"></script>
