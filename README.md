@@ -5,6 +5,7 @@
 <h1 align="center">arc-next</h1>
 
 <p align="center">
+  <a href="https://chromewebstore.google.com/detail/arc-next/pdjfhfbahgalbcpabpghbhobacmimjbk"><img src="https://img.shields.io/chrome-web-store/v/pdjfhfbahgalbcpabpghbhobacmimjbk?logo=googlechrome&logoColor=white&label=Chrome%20Web%20Store&color=4285F4" alt="Chrome Web Store"></a>
   <img src="https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white" alt="Chrome Extension">
   <img src="https://img.shields.io/badge/Manifest-V3-2d4fe3" alt="Manifest V3">
   <img src="https://img.shields.io/badge/license-MIT-ff5a6e" alt="MIT License">
@@ -48,6 +49,11 @@ For Arc's ⌘S toggle: in macOS **System Settings → Keyboard → Keyboard Shor
 
 ### 2. Install the extension
 
+Install it from the [Chrome Web Store](https://chromewebstore.google.com/detail/arc-next/pdjfhfbahgalbcpabpghbhobacmimjbk). Chrome keeps it up to date.
+
+<details>
+<summary>Or load it by hand from GitHub</summary>
+
 1. Download `arc-next.zip` from the [latest release](https://github.com/TalkWIthKeyboard/arc-next/releases/latest) and unzip it. You get a folder named `arc-next`; remember where it is. If you use git, you can clone instead:
 
    ```sh
@@ -67,6 +73,8 @@ For Arc's ⌘S toggle: in macOS **System Settings → Keyboard → Keyboard Shor
 6. The arc-next card appears in the list. The extension is installed.
 
    ![The arc-next card after installing](docs/install-3-loaded.png)
+
+</details>
 
 ### 3. Set the shortcuts
 
